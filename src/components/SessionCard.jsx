@@ -3,57 +3,77 @@ import { cancelBooking } from '../services/api';
 
 export default function SessionCard({ session, onCancel }) {
   const [isCancelling, setIsCancelling] = useState(false);
-  const [error, setError] = useState('');
-
+  
   const handleCancel = async () => {
-    if (window.confirm('Are you sure you want to cancel this session?')) {
-      setIsCancelling(true);
-      setError('');
-      
-      try {
-        await cancelBooking(session.id);
-        if (onCancel) onCancel();
-      } catch (err) {
-        setError('Failed to cancel booking. Please try again.');
-      } finally {
-        setIsCancelling(false);
-      }
+    setIsCancelling(true);
+    try {
+      await cancelBooking(session.id);
+      onCancel();
+    } catch (error) {
+      console.error("Failed to cancel booking:", error);
+    } finally {
+      setIsCancelling(false);
     }
   };
 
+  const statusColors = {
+    confirmed: 'bg-green-100 text-green-800',
+    cancelled: 'bg-red-100 text-red-800'
+  };
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md mb-4">
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="text-xl font-semibold">{session.mentorName}</h3>
-          <p className="text-gray-600">
-            {new Date(session.date).toLocaleDateString()} at {session.time}
-          </p>
-          <p className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-medium ${
-            session.status === 'confirmed' 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
-          }`}>
-            {session.status}
-          </p>
+    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-all duration-300">
+      <div className="p-6 md:flex md:items-center md:justify-between">
+        <div className="flex items-center mb-4 md:mb-0">
+          <img 
+            src={session.mentorImage} 
+            alt={session.mentorName} 
+            className="w-16 h-16 rounded-full object-cover mr-4"
+          />
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">{session.mentorName}</h3>
+            <div className="flex items-center mt-1">
+              <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${statusColors[session.status]}`}>
+                {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-8">
+          <div>
+            <p className="text-sm text-gray-500">Date</p>
+            <p className="font-medium">{new Date(session.date).toLocaleDateString('en-US', { 
+              weekday: 'short', 
+              month: 'short', 
+              day: 'numeric' 
+            })}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Time</p>
+            <p className="font-medium">
+              {new Date(`2000-01-01T${session.time}`).toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              })}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Duration</p>
+            <p className="font-medium">{session.duration}</p>
+          </div>
         </div>
         
         {session.status === 'confirmed' && (
           <button
             onClick={handleCancel}
             disabled={isCancelling}
-            className="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition disabled:opacity-50"
+            className="mt-4 md:mt-0 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg transition-all duration-300 font-medium text-sm disabled:opacity-70"
           >
-            {isCancelling ? 'Cancelling...' : 'Cancel'}
+            {isCancelling ? 'Cancelling...' : 'Cancel Session'}
           </button>
         )}
       </div>
-      
-      {error && (
-        <div className="mt-3 text-red-600 text-sm">
-          {error}
-        </div>
-      )}
     </div>
   );
 }
